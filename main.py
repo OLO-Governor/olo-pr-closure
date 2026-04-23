@@ -5,9 +5,11 @@ app = FastAPI()
 
 TICKET_PATTERN = re.compile(r"[A-Z]+-\d+")
 
+
 def extract_ticket_key(text: str):
     match = TICKET_PATTERN.search(text or "")
     return match.group(0) if match else None
+
 
 @app.post("/webhook/github")
 async def github_webhook(request: Request):
