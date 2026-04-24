@@ -35,7 +35,7 @@ def handle_writeback(github_client, jira_client, context, analysis):
         print("GITHUB WRITE ERROR:", str(e))
 
     try:
-        jira_client.add_comment_if_new(
+        jira_client.upsert_comment(
             ticket["key"],
             jira_body,
             marker
