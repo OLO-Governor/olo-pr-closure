@@ -29,21 +29,29 @@ class GitHubClient:
 
         return res.json()
 
-    def post_pr_comment_if_new(self, owner, repo, pr_number, body, marker):
+    def upsert_pr_comment(self, owner, repo, pr_number, body, marker):
         comments = self.get_pr_comments(owner, repo, pr_number)
 
         for c in comments:
             if marker in c.get("body", ""):
-                return False  # already posted
+                comment_id = c["id"]
 
-        full_body = f"{marker}\n{body}"
+                url = f"https://api.github.com/repos/{owner}/{repo}/issues/comments/{comment_id}"
+
+                res = requests.patch(
+                    url,
+                    headers=self.headers,
+                    json={"body": f"{marker}\n{body}"}
+                )
+
+                return res.status_code == 200
 
         url = f"https://api.github.com/repos/{owner}/{repo}/issues/{pr_number}/comments"
 
         res = requests.post(
             url,
             headers=self.headers,
-            json={"body": full_body}
+            json={"body": f"{marker}\n{body}"}
         )
 
         return res.status_code == 201
