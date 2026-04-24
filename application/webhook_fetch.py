@@ -4,6 +4,7 @@ import domain.services
 from infrastructure.jira_client import jira_client
 from infrastructure.github_client import github_client
 from infrastructure.openwebui_client import openwebui_client
+import requests
 
 
 def handle_webhook(payload):
@@ -66,9 +67,12 @@ def handle_webhook(payload):
             context,
             parsed
         )
-    except Exception as e:
-        print("WRITEBACK ERROR:", str(e))
-        return None, "Write-back failed"
+    except (requests.RequestException, KeyError, TypeError) as e:
+        return {
+            "context": context,
+            "analysis": parsed,
+            "error": str(e)
+        }, "Write-back HTTP failed"
 
     return {
         "context": context,

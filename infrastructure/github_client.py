@@ -32,8 +32,6 @@ class GitHubClient:
     def post_pr_comment_if_new(self, owner, repo, pr_number, body, marker):
         comments = self.get_pr_comments(owner, repo, pr_number)
 
-        print("POSTING TO:", owner, repo, pr_number)
-
         for c in comments:
             if marker in c.get("body", ""):
                 return False  # already posted
@@ -47,8 +45,6 @@ class GitHubClient:
             headers=self.headers,
             json={"body": full_body}
         )
-        print("STATUS:", res.status_code)
-        print("RESPONSE:", res.text)
 
         return res.status_code == 201
 
