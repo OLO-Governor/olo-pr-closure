@@ -5,16 +5,6 @@ def handle_writeback(github_client, jira_client, context, analysis):
     comments = analysis.get("comments", [])
     checklist = analysis.get("checklist", [])
 
-    gh_body = "\n".join([
-        f"- {c['file']}:{c['line']} → {c['comment']}"
-        for c in comments
-    ])
-
-    jira_body = "\n".join([
-        f"- [ ] {item['item']}"
-        for item in checklist
-    ])
-
     repo_owner = pr.get("repo_owner")
     repo_name = pr.get("repo_name")
     pr_number = pr.get("number")
@@ -23,11 +13,11 @@ def handle_writeback(github_client, jira_client, context, analysis):
 
     # Upsert PR comment: updates existing comment (by marker) or creates new
     try:
-        github_client.upsert_pr_comment(
+        github_client.upsert_structured_pr_comment(
             repo_owner,
             repo_name,
             pr_number,
-            gh_body,
+            comments,
             marker
         )
     except Exception as e:
@@ -35,9 +25,9 @@ def handle_writeback(github_client, jira_client, context, analysis):
         print("GITHUB WRITE ERROR:", str(e))
 
     try:
-        jira_client.upsert_comment(
+        jira_client.upsert_structured_comment(
             ticket["key"],
-            jira_body,
+            checklist,
             marker
         )
     except Exception as e:

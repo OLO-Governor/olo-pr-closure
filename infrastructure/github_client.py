@@ -56,5 +56,19 @@ class GitHubClient:
 
         return res.status_code == 201
 
+    def upsert_structured_pr_comment(self, owner, repo, pr_number, comments, marker):
+        body = "\n".join([
+            f"- {c['file']}:{c['line']} → {c['comment']}"
+            for c in comments
+        ])
+
+        return self.upsert_pr_comment(
+            owner,
+            repo,
+            pr_number,
+            body,
+            marker
+        )
+
 
 github_client = GitHubClient()
