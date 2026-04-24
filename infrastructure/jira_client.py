@@ -74,9 +74,6 @@ class JiraClient:
             }
         )
 
-        print("JIRA CREATE STATUS:", res.status_code)
-        print("JIRA CREATE RESPONSE:", res.text)
-
         return res.status_code == 201
 
     def upsert_comment(self, issue_key, body, marker):
@@ -120,9 +117,6 @@ class JiraClient:
                         }
                     }
                 )
-
-                print("JIRA UPDATE STATUS:", res.status_code)
-                print("JIRA RESPONSE:", res.text)
 
                 return res.status_code == 200
 
