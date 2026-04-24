@@ -57,10 +57,13 @@ class GitHubClient:
         return res.status_code == 201
 
     def upsert_structured_pr_comment(self, owner, repo, pr_number, comments, marker):
-        body = "\n".join([
-            f"- {c['file']}:{c['line']} → {c['comment']}"
-            for c in comments
-        ])
+        if not comments:
+            body = "No high-level issues identified."
+        else:
+            body = "\n".join([
+                f"- {c['file']}:{c['line']} → {c['comment']}"
+                for c in comments
+            ])
 
         return self.upsert_pr_comment(
             owner,

@@ -124,10 +124,13 @@ class JiraClient:
         return self.add_comment_if_new(issue_key, body, marker)
 
     def upsert_structured_comment(self, issue_key, checklist, marker):
-        body = "\n".join([
-            f"- [ ] {item['item']}"
-            for item in checklist
-        ])
+        if not checklist:
+            body = "No additional QA checks required."
+        else:
+            body = "\n".join([
+                f"- [ ] {item['item']}"
+                for item in checklist
+            ])
 
         return self.upsert_comment(issue_key, body, marker)
 
