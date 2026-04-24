@@ -24,10 +24,9 @@ GitHub PR Event
   → Send to OpenWebUI (LLM)
   → Receive structured output
   → Parse output (comments + checklist)
-  → Idempotency check
-  → Write-back:
-       PR comments → GitHub
-       QA checklist → Jira (draft)
+  → Write-back (upsert):
+       PR comments → GitHub (single evolving comment)
+       QA checklist → Jira (draft, updated in place)
 ```
 
 ---
@@ -35,11 +34,12 @@ GitHub PR Event
 ## Features
 
 - End-to-end orchestration across GitHub, Jira, and LLM
-- Structured PR review comments
+- Structured PR review comments (high-signal, diff-aware)
 - QA checklist generation mapped to ticket intent
-- Idempotent processing (no duplicate comments)
+- Upsert-based write-back (no duplicate comments, converging output)
 - Explicit failure boundaries (safe execution)
 - Local-first LLM integration (OpenWebUI)
+- Webhook signature validation (HMAC SHA256)
 
 ---
 
@@ -51,12 +51,20 @@ application/
   webhook_put.py
 
 domain/
+  models.py
   services.py
 
 infrastructure/
+  config.py
   github_client.py
   jira_client.py
   openwebui_client.py
+
+presentation/
+  routes.py
+  middleware/github_signature.py
+
+tests/
 
 main.py
 ```
@@ -78,11 +86,15 @@ Create a `.env` file based on:
 
 ```
 GITHUB_TOKEN=
+GITHUB_WEBHOOK_SECRET=
+
 JIRA_BASE_URL=
 JIRA_EMAIL=
 JIRA_API_TOKEN=
+
 OPENWEBUI_URL=
 OPENWEBUI_API_KEY=
+OPENWEBUI_MODEL=
 ```
 
 ---
@@ -119,6 +131,7 @@ Configure a webhook on your repository:
 - URL: `https://<your-domain>/webhook/github`
 - Method: `POST`
 - Content type: `application/json`
+- Secret: must match `GITHUB_WEBHOOK_SECRET`
 - Events:
   - Pull request
 
@@ -132,15 +145,19 @@ Configure a webhook on your repository:
 
 ---
 
-## Idempotency
+## Writeback Model
 
-To prevent duplicate comments, PR comments include a marker:
+The system uses a **converging upsert model**:
+
+- One comment per PR
+- One checklist per Jira ticket
+- Each run updates existing outputs instead of creating new ones
+
+Marker used:
 
 ```
 <!-- prclosure:{ticket_key} -->
 ```
-
-Existing comments are checked before posting.
 
 ---
 
@@ -151,6 +168,7 @@ The system enforces strict boundaries:
 - Missing ticket key → processing blocked
 - Ticket not found → blocked
 - Empty diff → skipped
+- Invalid webhook signature → rejected (401)
 - API failure → no write-back
 - LLM unavailable → no output
 
@@ -176,8 +194,8 @@ For production or public use:
 ## Notes
 
 - This is a working system, not a mock or prototype
-- It demonstrates orchestration, not full governance
-- Designed to be extended with stricter contracts (OPRC-3)
+- It demonstrates orchestration and bounded AI execution
+- Focus is on control, convergence, and integration patterns
 
 ---
 
