@@ -1,2 +1,4 @@
 .idea/
 venv/
+.env-local
+/.env

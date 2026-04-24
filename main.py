@@ -1,13 +1,10 @@
 from fastapi import FastAPI
+from dotenv import load_dotenv
+from presentation.routes import router  # after env is loaded
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI()
 
-
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
+app.include_router(router)
