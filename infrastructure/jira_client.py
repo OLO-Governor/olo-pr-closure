@@ -76,6 +76,64 @@ class JiraClient:
 
         return res.status_code == 201
 
+    def upsert_comment(self, issue_key, body, marker):
+        comments = self.get_comments(issue_key)
+
+        for comment in comments:
+            comment_body = str(comment.get("body", ""))
+
+            if marker in comment_body:
+                comment_id = comment["id"]
+
+                url = f"{self.base_url}/rest/api/{config.JIRA_API_VERSION}/issue/{issue_key}/comment/{comment_id}"
+
+                res = requests.put(
+                    url,
+                    headers=self.headers,
+                    json={
+                        "body": {
+                            "type": "doc",
+                            "version": 1,
+                            "content": [
+                                {
+                                    "type": "paragraph",
+                                    "content": [
+                                        {
+                                            "type": "text",
+                                            "text": marker
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "paragraph",
+                                    "content": [
+                                        {
+                                            "type": "text",
+                                            "text": body
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                )
+
+                return res.status_code == 200
+
+        # create new if not found
+        return self.add_comment_if_new(issue_key, body, marker)
+
+    def upsert_structured_comment(self, issue_key, checklist, marker):
+        if not checklist:
+            body = "No additional QA checks required."
+        else:
+            body = "\n".join([
+                f"- [ ] {item['item']}"
+                for item in checklist
+            ])
+
+        return self.upsert_comment(issue_key, body, marker)
+
     @staticmethod
     def _extract_text(description):
         if not description:

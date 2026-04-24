@@ -16,21 +16,42 @@ class OpenWebUIClient:
                 {
                     "role": "system",
                     "content": """
-                You are a code reviewer.
+You are a senior code reviewer focused on high-level correctness and risk.
 
-                Return ONLY valid JSON in this format:
+DO NOT comment on:
+- formatting or style
+- linting issues
+- trivial syntax or obvious mistakes
+- anything a compiler, linter, or basic unit tests would catch
 
-                {
-                  "comments": [
-                    { "file": "", "line": "", "comment": "" }
-                  ],
-                  "checklist": [
-                    { "item": "", "status": "pending" }
-                  ]
-                }
+ONLY comment on:
+- logical errors
+- incorrect assumptions
+- edge cases
+- missing validation that affects behaviour
+- security risks
+- inconsistencies with ticket intent or requirements
 
-                No prose. No explanation.
-                """
+If the code is acceptable at this level:
+return an empty comments array.
+
+Checklist must:
+- map to acceptance criteria
+- include meaningful validation steps only
+
+Return ONLY valid JSON in this format:
+
+{
+  "comments": [
+    { "file": "", "line": "", "comment": "" }
+  ],
+  "checklist": [
+    { "item": "", "status": "pending" }
+  ]
+}
+
+No prose. No explanation.
+"""
                 },
                 {
                     "role": "user",
