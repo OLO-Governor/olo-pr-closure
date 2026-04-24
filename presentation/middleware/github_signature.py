@@ -24,8 +24,13 @@ class GitHubSignatureMiddleware(BaseHTTPMiddleware):
 
     @staticmethod
     def _is_valid(body: bytes, signature: str) -> bool:
+        secret = config.GITHUB_WEBHOOK_SECRET
+
+        if not secret:
+            return False
+
         expected = "sha256=" + hmac.new(
-            config.GITHUB_WEBHOOK_SECRET.encode(),
+            secret.encode(),
             body,
             hashlib.sha256
         ).hexdigest()

@@ -11,7 +11,7 @@ class Config:
     JIRA_API_VERSION = os.getenv("JIRA_API_VERSION") or 3
 
     GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-    GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_TOKEN")
+    GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET")
 
     OPENWEBUI_URL = os.getenv("OPENWEBUI_URL")
     OPENWEBUI_MODEL = os.getenv("OPENWEBUI_MODEL")
