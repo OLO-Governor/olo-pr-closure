@@ -21,6 +21,7 @@ def handle_writeback(github_client, jira_client, context, analysis):
 
     marker = f"<!-- prclosure:{ticket['key']} -->"
 
+    # Upsert PR comment: updates existing comment (by marker) or creates new
     github_client.upsert_pr_comment(
         repo_owner,
         repo_name,

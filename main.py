@@ -8,7 +8,8 @@ load_dotenv()
 
 app = FastAPI()
 
-# Validate GitHub webhook signatures (HMAC SHA256) to ensure request authenticity
+# Middleware validates GitHub webhook signatures.
+# It is internally scoped to /webhook/github via path check in the middleware.
 app.add_middleware(GitHubSignatureMiddleware)
 
 app.include_router(router)
