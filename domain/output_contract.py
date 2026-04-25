@@ -17,13 +17,9 @@ ALLOWED_SEVERITIES = {
 }
 
 ALLOWED_CATEGORIES = {
-    "correctness",
+    "risk",
     "validation",
-    "security",
-    "data_handling",
-    "acceptance_criteria",
-    "regression",
-    "maintainability",
+    "consistency",
 }
 
 

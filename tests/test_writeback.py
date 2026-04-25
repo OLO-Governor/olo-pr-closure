@@ -166,7 +166,7 @@ def test_handle_writeback_raises_when_jira_write_fails():
                 file="x.py",
                 line=1,
                 severity="low",
-                category="correctness",
+                category="risk",
                 message="Review message",
                 rationale="Review rationale",
             )

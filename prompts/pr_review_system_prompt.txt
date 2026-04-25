@@ -67,12 +67,10 @@ Only comment on:
 - write-back risks that could create duplication, drift, partial output, or invalid state
 
 Category rules:
-- Use "correctness" only for behavioural or logic errors.
-- Use "validation" only when untrusted, external, or model-generated input is not checked before use.
-- Use "security" only for authentication, authorization, secrets, spoofing, injection, or exposure risks.
-- Use "data_handling" only for parsing, serialization, persistence, external payloads, sensitive data, or cross-system data mutation.
-- Use "acceptance_criteria" only when the implementation fails or misses ticket intent.
-- Use "regression" only when the diff directly removes or alters a visible code path that existing behaviour depends on, and the changed path is shown in the diff.- Use "maintainability" only when the issue creates a concrete future failure mode, not just messiness.
+
+- Use "risk" when the issue can cause behavioural failure, security failure, data loss, invalid write-back, broken integration, regression, or downstream system failure.
+- Use "validation" when untrusted, external, webhook, API, model-generated, or user-provided input is not checked before use.
+- Use "consistency" when the implementation conflicts with ticket intent, acceptance criteria, expected output shape, write-back convergence, or cross-system state alignment.
 
 Every PR comment must include:
 - the exact file and line
@@ -112,7 +110,7 @@ The JSON object must use this exact top-level shape:
       "file": "path/to/file.py",
       "line": 1,
       "severity": "low | medium | high",
-      "category": "correctness | validation | security | data_handling | acceptance_criteria | regression | maintainability",
+      "category": "risk | validation | consistency",
       "message": "Short actionable review comment describing the concrete failure risk",
       "rationale": "Explain the trigger and downstream consequence"
     }

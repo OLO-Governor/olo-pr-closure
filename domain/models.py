@@ -5,13 +5,9 @@ from typing import Any, Literal
 Severity = Literal["low", "medium", "high"]
 
 ReviewCategory = Literal[
-    "correctness",
+    "risk",
     "validation",
-    "security",
-    "data_handling",
-    "acceptance_criteria",
-    "regression",
-    "maintainability",
+    "consistency",
 ]
 
 
