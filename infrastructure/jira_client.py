@@ -23,11 +23,25 @@ class JiraClient:
             return None
 
         data = res.json()
+        fields = data.get("fields", {})
+
+        acceptance_criteria = ""
+        acceptance_criteria_field = getattr(
+            config,
+            "JIRA_ACCEPTANCE_CRITERIA_FIELD",
+            None,
+        )
+
+        if acceptance_criteria_field:
+            acceptance_criteria = self._extract_text(
+                fields.get(acceptance_criteria_field)
+            )
 
         return {
             "key": data["key"],
-            "summary": data["fields"]["summary"],
-            "description": self._extract_text(data["fields"]["description"])
+            "summary": fields.get("summary", ""),
+            "description": self._extract_text(fields.get("description")),
+            "acceptance_criteria": acceptance_criteria,
         }
 
     def get_comments(self, issue_key):
@@ -130,18 +144,33 @@ class JiraClient:
         )
 
     @staticmethod
-    def _extract_text(description):
-        if not description:
+    def _extract_text(value):
+        if not value:
             return ""
 
-        try:
-            return "".join(
-                block.get("text", "")
-                for section in description.get("content", [])
-                for block in section.get("content", [])
-            )
-        except (KeyError, TypeError):
-            return ""
+        if isinstance(value, str):
+            return value.strip()
+
+        if not isinstance(value, dict):
+            return str(value).strip()
+
+        text_parts = []
+
+        def walk(node):
+            if isinstance(node, dict):
+                if node.get("type") == "text" and "text" in node:
+                    text_parts.append(node["text"])
+
+                for child in node.get("content", []):
+                    walk(child)
+
+            elif isinstance(node, list):
+                for child in node:
+                    walk(child)
+
+        walk(value)
+
+        return " ".join(part.strip() for part in text_parts if part.strip())
 
 
 jira_client = JiraClient()

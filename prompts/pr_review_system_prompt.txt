@@ -98,6 +98,11 @@ Only create a QA checklist item when all of these are true:
 - The expected result is specific.
 - The item would still be useful to QA without reformatting or interpretation.
 
+Acceptance criteria handling:
+- Use ticket.acceptance_criteria when it is present.
+- If ticket.acceptance_criteria is empty, use ticket.description only where success criteria, acceptance criteria, expected behaviour, or testing requirements are explicitly written there.
+- Do not infer acceptance criteria from general description text.
+
 If you cannot state what is being validated and what result proves success, do not create the checklist item.
 
 Return ONLY valid JSON.

@@ -9,6 +9,7 @@ class Config:
     JIRA_EMAIL = os.getenv("JIRA_EMAIL")
     JIRA_API_TOKEN = os.getenv("JIRA_API_TOKEN")
     JIRA_API_VERSION = os.getenv("JIRA_API_VERSION") or 3
+    JIRA_ACCEPTANCE_CRITERIA_FIELD = os.getenv("JIRA_ACCEPTANCE_CRITERIA_FIELD")
 
     GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
     GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET") or ""
