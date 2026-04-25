@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import requests
+import json
 
 from infrastructure.config import config
 
@@ -26,7 +27,7 @@ class OpenWebUIClient:
                 },
                 {
                     "role": "user",
-                    "content": str(context),
+                    "content": self._format_context(context),
                 },
             ],
         }
@@ -55,6 +56,19 @@ class OpenWebUIClient:
             raise RuntimeError(
                 f"System prompt file not found: {SYSTEM_PROMPT_PATH}"
             ) from exc
+
+    @staticmethod
+    def _format_context(context) -> str:
+        return json.dumps(
+            {
+                "instruction": "Review the provided PR against the provided ticket context. Return only JSON matching "
+                               "the required output contract.",
+                "context": context,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+            indent=2,
+        )
 
 
 openwebui_client = OpenWebUIClient()
