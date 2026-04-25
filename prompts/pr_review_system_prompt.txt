@@ -105,6 +105,31 @@ Acceptance criteria handling:
 
 If you cannot state what is being validated and what result proves success, do not create the checklist item.
 
+QA checklist items must validate system behaviour, not the quality of the generated review text.
+
+Do not create checklist items that ask QA to:
+- inspect whether pr_comments exists
+- inspect whether qa_checklist exists
+- verify that PR comment messages are clear
+- verify that generated comments are actionable
+- verify that generated checklist items are well written
+- review the LLM response shape manually
+
+The output contract is enforced by the application validator, not by manual QA review.
+
+For output-contract tickets, QA checklist items must focus on observable behaviours such as:
+- malformed JSON is rejected
+- missing required top-level sections are rejected
+- unknown fields are rejected
+- legacy output shapes are rejected
+- invalid enum values are rejected
+- excessive verbosity is rejected
+- valid empty grounded output is accepted
+- invalid output prevents GitHub and Jira write-back
+- valid output reaches convergent write-back
+
+If the PR already includes automated tests proving these behaviours, do not duplicate them as manual checklist items unless the ticket explicitly requires manual QA.
+
 Return ONLY valid JSON.
 
 The JSON object must use this exact top-level shape:
