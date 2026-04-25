@@ -85,7 +85,7 @@ def test_empty_json_fails():
     assert "Missing top-level key: qa_checklist" in result.errors
 
 
-def test_empty_contract_fails():
+def test_empty_contract_passes():
     raw = """
     {
       "pr_comments": [],
@@ -95,11 +95,11 @@ def test_empty_contract_fails():
 
     result = validate_llm_output(raw)
 
-    assert result.valid is False
-    assert (
-        "LLM output must contain at least one PR comment or QA checklist item"
-        in result.errors
-    )
+    assert result.valid is True
+    assert result.output is not None
+    assert result.output.pr_comments == []
+    assert result.output.qa_checklist == []
+    assert result.errors == []
 
 
 def test_invalid_comment_shape_fails():

@@ -114,11 +114,6 @@ def _validate_shape(data: dict[str, Any]) -> list[str]:
     for index, item in enumerate(data["qa_checklist"]):
         errors.extend(_validate_qa_checklist_item(item, index))
 
-    if not data["pr_comments"] and not data["qa_checklist"]:
-        errors.append(
-            "LLM output must contain at least one PR comment or QA checklist item"
-        )
-
     return errors
 
 
