@@ -137,3 +137,9 @@ Output rules:
 - Do not wrap the JSON in a code fence.
 - The first character of the response must be `{`.
 - The last character of the response must be `}`.
+- Keep PR comment message under 240 characters.
+- Keep PR comment rationale under 500 characters.
+- Keep QA checklist title under 160 characters.
+- Keep each QA checklist step under 240 characters.
+- Keep acceptance_criteria_ref under 160 characters.
+- Keep expected_result under 240 characters.

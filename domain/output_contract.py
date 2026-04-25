@@ -4,7 +4,6 @@ from typing import Any
 
 from domain.models import LLMReviewOutput, OutputValidationResult
 
-
 ALLOWED_TOP_LEVEL_KEYS = {
     "pr_comments",
     "qa_checklist",
@@ -21,6 +20,13 @@ ALLOWED_CATEGORIES = {
     "validation",
     "consistency",
 }
+
+MAX_PR_MESSAGE_LENGTH = 240
+MAX_PR_RATIONALE_LENGTH = 500
+MAX_QA_TITLE_LENGTH = 160
+MAX_QA_STEP_LENGTH = 240
+MAX_QA_ACCEPTANCE_REF_LENGTH = 160
+MAX_QA_EXPECTED_RESULT_LENGTH = 240
 
 
 def validate_llm_output(raw_content: str | None) -> OutputValidationResult:
@@ -158,6 +164,22 @@ def _validate_pr_comment(comment: Any, index: int) -> list[str]:
     if not _non_empty_string(comment["rationale"]):
         errors.append(f"pr_comments[{index}].rationale must be non-empty text")
 
+    if _non_empty_string(comment["message"]) and not _within_length(
+            comment["message"],
+            MAX_PR_MESSAGE_LENGTH,
+    ):
+        errors.append(
+            f"pr_comments[{index}].message exceeds {MAX_PR_MESSAGE_LENGTH} characters"
+        )
+
+    if _non_empty_string(comment["rationale"]) and not _within_length(
+            comment["rationale"],
+            MAX_PR_RATIONALE_LENGTH,
+    ):
+        errors.append(
+            f"pr_comments[{index}].rationale exceeds {MAX_PR_RATIONALE_LENGTH} characters"
+        )
+
     return errors
 
 
@@ -197,6 +219,10 @@ def _validate_qa_checklist_item(item: Any, index: int) -> list[str]:
                 errors.append(
                     f"qa_checklist[{index}].steps[{step_index}] must be non-empty text"
                 )
+            elif not _within_length(step, MAX_QA_STEP_LENGTH):
+                errors.append(
+                    f"qa_checklist[{index}].steps[{step_index}] exceeds {MAX_QA_STEP_LENGTH} characters"
+                )
 
     if not _non_empty_string(item["acceptance_criteria_ref"]):
         errors.append(
@@ -208,8 +234,36 @@ def _validate_qa_checklist_item(item: Any, index: int) -> list[str]:
             f"qa_checklist[{index}].expected_result must be non-empty text"
         )
 
+    if _non_empty_string(item["title"]) and not _within_length(
+            item["title"],
+            MAX_QA_TITLE_LENGTH,
+    ):
+        errors.append(
+            f"qa_checklist[{index}].title exceeds {MAX_QA_TITLE_LENGTH} characters"
+        )
+
+    if _non_empty_string(item["acceptance_criteria_ref"]) and not _within_length(
+            item["acceptance_criteria_ref"],
+            MAX_QA_ACCEPTANCE_REF_LENGTH,
+    ):
+        errors.append(
+            f"qa_checklist[{index}].acceptance_criteria_ref exceeds {MAX_QA_ACCEPTANCE_REF_LENGTH} characters"
+        )
+
+    if _non_empty_string(item["expected_result"]) and not _within_length(
+            item["expected_result"],
+            MAX_QA_EXPECTED_RESULT_LENGTH,
+    ):
+        errors.append(
+            f"qa_checklist[{index}].expected_result exceeds {MAX_QA_EXPECTED_RESULT_LENGTH} characters"
+        )
+
     return errors
 
 
 def _non_empty_string(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
+
+
+def _within_length(value: Any, max_length: int) -> bool:
+    return isinstance(value, str) and len(value.strip()) <= max_length

@@ -22,7 +22,7 @@ def test_valid_output_passes():
             "Confirm no GitHub comment is written",
             "Confirm no Jira checklist is written"
           ],
-          "acceptance_criteria_ref": "Output contract enforcement",
+          "acceptance_criteria_ref": "consistency",
           "expected_result": "Write-back is blocked"
         }
       ]
@@ -187,3 +187,71 @@ def test_invalid_category_fails():
 
     assert result.valid is False
     assert "pr_comments[0].category is invalid" in result.errors
+
+def test_pr_message_too_long_fails():
+    raw = f"""
+    {{
+      "pr_comments": [
+        {{
+          "file": "x.py",
+          "line": 1,
+          "severity": "medium",
+          "category": "risk",
+          "message": "{'x' * 241}",
+          "rationale": "Valid rationale"
+        }}
+      ],
+      "qa_checklist": []
+    }}
+    """
+
+    result = validate_llm_output(raw)
+
+    assert result.valid is False
+    assert "pr_comments[0].message exceeds 240 characters" in result.errors
+
+
+def test_pr_rationale_too_long_fails():
+    raw = f"""
+    {{
+      "pr_comments": [
+        {{
+          "file": "x.py",
+          "line": 1,
+          "severity": "medium",
+          "category": "risk",
+          "message": "Valid message",
+          "rationale": "{'x' * 501}"
+        }}
+      ],
+      "qa_checklist": []
+    }}
+    """
+
+    result = validate_llm_output(raw)
+
+    assert result.valid is False
+    assert "pr_comments[0].rationale exceeds 500 characters" in result.errors
+
+
+def test_qa_step_too_long_fails():
+    raw = f"""
+    {{
+      "pr_comments": [],
+      "qa_checklist": [
+        {{
+          "title": "Valid title",
+          "steps": [
+            "{'x' * 241}"
+          ],
+          "acceptance_criteria_ref": "OPRC-3",
+          "expected_result": "Valid expected result"
+        }}
+      ]
+    }}
+    """
+
+    result = validate_llm_output(raw)
+
+    assert result.valid is False
+    assert "qa_checklist[0].steps[0] exceeds 240 characters" in result.errors
