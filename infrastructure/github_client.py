@@ -57,20 +57,9 @@ class GitHubClient:
         return res.status_code == 201
 
     def upsert_structured_pr_comment(self, owner, repo, pr_number, comments, marker):
-        if not comments:
-            body = "No high-level issues identified."
-        else:
-            body = "\n".join([
-                f"- {c['file']}:{c['line']} → {c['comment']}"
-                for c in comments
-            ])
-
-        return self.upsert_pr_comment(
-            owner,
-            repo,
-            pr_number,
-            body,
-            marker
+        raise NotImplementedError(
+            "upsert_structured_pr_comment is deprecated. "
+            "Use upsert_pr_comment with a preformatted body."
         )
 
 

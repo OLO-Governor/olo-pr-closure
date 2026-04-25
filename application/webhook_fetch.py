@@ -1,10 +1,11 @@
-# application/webhook_fetch.py
+import requests
 
 import domain.services
-from infrastructure.jira_client import jira_client
+from application.webhook_put import handle_writeback
+from domain.output_contract import validate_llm_output
 from infrastructure.github_client import github_client
+from infrastructure.jira_client import jira_client
 from infrastructure.openwebui_client import openwebui_client
-import requests
 
 
 def handle_webhook(payload):
@@ -31,7 +32,7 @@ def handle_webhook(payload):
         github_client,
         repo_info["owner"],
         repo_info["repo"],
-        pr_number
+        pr_number,
     )
 
     if not diff:
@@ -45,36 +46,47 @@ def handle_webhook(payload):
             "diff": diff,
             "repo_owner": repo_info["owner"],
             "repo_name": repo_info["repo"],
-            "number": pr_number
+            "number": pr_number,
         },
-        ticket
+        ticket,
     )
 
     analysis = openwebui_client.analyze(context)
     if not analysis:
         return context, "LLM unavailable"
 
-    content = analysis["choices"][0]["message"]["content"] if analysis else None
+    content = _extract_llm_content(analysis)
 
-    parsed = domain.services.parse_llm_output(content)
-
-    from application.webhook_put import handle_writeback
+    validation = validate_llm_output(content)
+    if not validation.valid or validation.output is None:
+        return {
+            "context": context,
+            "validation_errors": validation.errors,
+            "raw_llm_output": content,
+        }, "Invalid LLM output"
 
     try:
         handle_writeback(
             github_client,
             jira_client,
             context,
-            parsed
+            validation.output,
         )
-    except (requests.RequestException, KeyError, TypeError) as e:
+    except (requests.RequestException, KeyError, TypeError, AttributeError) as e:
         return {
             "context": context,
-            "analysis": parsed,
-            "error": str(e)
-        }, "Write-back HTTP failed"
+            "analysis": validation.output,
+            "error": str(e),
+        }, "Write-back failed"
 
     return {
         "context": context,
-        "analysis": parsed
+        "analysis": validation.output,
     }, None
+
+
+def _extract_llm_content(analysis):
+    try:
+        return analysis["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        return None

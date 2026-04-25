@@ -124,15 +124,10 @@ class JiraClient:
         return self.add_comment_if_new(issue_key, body, marker)
 
     def upsert_structured_comment(self, issue_key, checklist, marker):
-        if not checklist:
-            body = "No additional QA checks required."
-        else:
-            body = "\n".join([
-                f"- [ ] {item['item']}"
-                for item in checklist
-            ])
-
-        return self.upsert_comment(issue_key, body, marker)
+        raise NotImplementedError(
+            "upsert_structured_comment is deprecated. "
+            "Use upsert_comment with a preformatted body."
+        )
 
     @staticmethod
     def _extract_text(description):

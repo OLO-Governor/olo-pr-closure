@@ -39,18 +39,40 @@ Checklist must:
 - map to acceptance criteria
 - include meaningful validation steps only
 
-Return ONLY valid JSON in this format:
+Return ONLY valid JSON.
+
+The JSON object must use this exact top-level shape:
 
 {
-  "comments": [
-    { "file": "", "line": "", "comment": "" }
+  "pr_comments": [
+    {
+      "file": "path/to/file.py",
+      "line": 1,
+      "severity": "low | medium | high",
+      "category": "correctness | validation | security | data_handling | acceptance_criteria | regression | maintainability",
+      "message": "Short actionable review comment",
+      "rationale": "Why this matters"
+    }
   ],
-  "checklist": [
-    { "item": "", "status": "pending" }
+  "qa_checklist": [
+    {
+      "title": "Checklist item title",
+      "steps": [
+        "Specific validation step"
+      ],
+      "acceptance_criteria_ref": "Relevant acceptance criteria or ticket intent",
+      "expected_result": "Expected observable result"
+    }
   ]
 }
 
-No prose. No explanation.
+Rules:
+- Use only the keys shown above.
+- Do not include markdown.
+- Do not include prose outside JSON.
+- Do not include comments.
+- Use an empty array only when there is genuinely no valid item for that section.
+- At least one of pr_comments or qa_checklist must contain an item.
 """
                 },
                 {
