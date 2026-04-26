@@ -184,3 +184,40 @@ def test_handle_writeback_raises_when_jira_write_fails():
 
     assert len(github_client.calls) == 1
     assert len(jira_client.calls) == 1
+
+
+def test_handle_writeback_formats_empty_qa_output_as_human_guidance():
+    github_client = FakeGitHubClient()
+    jira_client = FakeJiraClient()
+
+    context = {
+        "pr": {
+            "repo_owner": "OLO-Governor",
+            "repo_name": "olo-pr-closure",
+            "number": 12,
+        },
+        "ticket": {
+            "key": "OPRC-13",
+        },
+    }
+
+    analysis = LLMReviewOutput(
+        pr_comments=[],
+        qa_checklist=[],
+    )
+
+    handle_writeback(
+        github_client,
+        jira_client,
+        context,
+        analysis,
+    )
+
+    body = jira_client.calls[0]["body"]
+
+    assert "Reviewed the PR against the ticket." in body
+    assert "Validated:" in body
+    assert "Observed:" in body
+    assert "Outcome:" in body
+    assert "QA Action:" in body
+    assert "No additional QA checks required." not in body

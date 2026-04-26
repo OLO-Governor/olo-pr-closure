@@ -2,10 +2,10 @@ from domain.models import LLMReviewOutput, PRComment, QAChecklistItem
 
 
 def handle_writeback(
-    github_client,
-    jira_client,
-    context,
-    analysis: LLMReviewOutput,
+        github_client,
+        jira_client,
+        context,
+        analysis: LLMReviewOutput,
 ):
     pr = context["pr"]
     ticket = context["ticket"]
@@ -59,24 +59,56 @@ def _format_pr_comments(comments: list[PRComment]) -> str:
 
 def _format_qa_checklist(items: list[QAChecklistItem]) -> str:
     if not items:
-        return "No additional QA checks required."
+        return (
+            "Reviewed the PR against the ticket.\n\n"
+            "Validated:\n"
+            "- Acceptance criteria were checked against the changes where possible from the diff.\n\n"
+            "Observed:\n"
+            "- No specific risks or edge cases were identified from the changes.\n\n"
+            "Outcome:\n"
+            "- No gaps identified from code review. Behaviour should be confirmed in QA.\n\n"
+            "QA Action:\n"
+            "- Verify acceptance criteria are met in a running environment.\n"
+            "- Confirm no regression in related behaviour."
+        )
 
-    blocks = []
+    blocks = [
+        "Reviewed the PR against the ticket.",
+        "",
+        "Validated:",
+    ]
 
     for item in items:
-        steps = "\n".join(
-            f"  - {step}"
-            for step in item.steps
-        )
+        blocks.append(f"- {item.acceptance_criteria_ref}: {item.title}")
 
-        blocks.append(
-            (
-                f"- [ ] {item.title}\n"
-                f"  Acceptance criteria: {item.acceptance_criteria_ref}\n"
-                f"  Steps:\n"
-                f"{steps}\n"
-                f"  Expected result: {item.expected_result}"
-            )
-        )
+    blocks.extend(
+        [
+            "",
+            "Observed:",
+        ]
+    )
 
-    return "\n\n".join(blocks)
+    for item in items:
+        for step in item.steps:
+            blocks.append(f"- {step}")
+
+    blocks.extend(
+        [
+            "",
+            "Outcome:",
+        ]
+    )
+
+    for item in items:
+        blocks.append(f"- {item.expected_result}")
+
+    blocks.extend(
+        [
+            "",
+            "QA Action:",
+            "- Run the checks above and confirm behaviour against the acceptance criteria.",
+            "- Block progression if the observed behaviour does not match the expected result.",
+        ]
+    )
+
+    return "\n".join(blocks)

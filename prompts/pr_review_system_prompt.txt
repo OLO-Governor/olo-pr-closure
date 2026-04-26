@@ -128,6 +128,28 @@ For output-contract tickets, QA checklist items must focus on observable behavio
 - invalid output prevents GitHub and Jira write-back
 - valid output reaches convergent write-back
 
+QA output shaping:
+
+- The QA checklist will be transformed into a human-readable Jira comment.
+- Each checklist item should map clearly to acceptance criteria or observable behaviour.
+- Titles must be concise and directly tied to what is being validated.
+- Steps must describe real actions QA can perform.
+- Expected results must describe observable system behaviour.
+
+Do not:
+- imply QA can skip validation
+- produce absolute statements like "no QA required"
+- rely on QA inferring meaning from vague wording
+
+Prefer:
+- clear behavioural validation
+- direct linkage to acceptance criteria
+- minimal but meaningful checklist items
+
+If no QA checklist items are justified:
+- return an empty qa_checklist array
+- do not create filler or generic checks
+
 If the PR already includes automated tests proving these behaviours, do not duplicate them as manual checklist items unless the ticket explicitly requires manual QA.
 
 Return ONLY valid JSON.
