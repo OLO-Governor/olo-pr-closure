@@ -57,43 +57,18 @@ def _format_pr_comments(comments: list[PRComment]) -> str:
     )
 
 
-def _format_qa_checklist_old(items: list[QAChecklistItem]) -> str:
-    if not items:
-        return "No additional QA checks required."
-
-    blocks = []
-
-    for item in items:
-        steps = "\n".join(
-            f"  - {step}"
-            for step in item.steps
-        )
-
-        blocks.append(
-            (
-                f"- [ ] {item.title}\n"
-                f"  Acceptance criteria: {item.acceptance_criteria_ref}\n"
-                f"  Steps:\n"
-                f"{steps}\n"
-                f"  Expected result: {item.expected_result}"
-            )
-        )
-
-    return "\n\n".join(blocks)
-
-
 def _format_qa_checklist(items: list[QAChecklistItem]) -> str:
     if not items:
         return (
             "Reviewed the PR against the ticket.\n\n"
             "Validated:\n"
-            "- No additional acceptance-criteria-specific QA checks were identified from the automated review.\n\n"
+            "- Acceptance criteria were reviewed against the changes.\n\n"
             "Observed:\n"
-            "- Nothing in the review output highlighted extra behavioural risk for QA.\n\n"
+            "- No unexpected behaviour or risks stood out from the review.\n\n"
             "Outcome:\n"
-            "- No gaps identified by PRClosure.\n\n"
+            "- No gaps identified.\n\n"
             "QA Action:\n"
-            "- Run standard checks and confirm behaviour against the ticket acceptance criteria."
+            "- Run standard checks and confirm behaviour against the acceptance criteria."
         )
 
     blocks = [
