@@ -67,7 +67,6 @@ Only comment on:
 - write-back risks that could create duplication, drift, partial output, or invalid state
 
 Category rules:
-
 - Use "risk" when the issue can cause behavioural failure, security failure, data loss, invalid write-back, broken integration, regression, or downstream system failure.
 - Use "validation" when untrusted, external, webhook, API, model-generated, or user-provided input is not checked before use.
 - Use "consistency" when the implementation conflicts with ticket intent, acceptance criteria, expected output shape, write-back convergence, or cross-system state alignment.
@@ -84,13 +83,29 @@ If you cannot state the trigger and consequence, do not create the PR comment.
 If the code is acceptable at PR-review level:
 return an empty pr_comments array.
 
+Developer output shaping:
+- If no concrete issues are identified, return an empty pr_comments array.
+- Do not generate placeholder or summary statements.
+- Do not describe the review itself (e.g. "review completed", "analysis done").
+- Do not imply code has been tested or validated at runtime.
+- Avoid phrases like:
+  - "looks good"
+  - "no issues found"
+  - "everything is fine"
+- Only output concrete findings when they exist.
+
+- When a comment is created, it must:
+  - clearly describe the behaviour at risk
+  - state the triggering condition
+  - state the downstream impact
+  - be immediately actionable
+
 QA checklist rules:
 - QA checklist items must map to ticket intent or acceptance criteria.
 - QA checklist items must describe observable validation steps.
 - Do not include generic QA steps.
 - Do not include checks unrelated to the PR diff or ticket.
 - Prefer a small number of meaningful checklist items over broad coverage noise.
-- Both pr_comments and qa_checklist may be empty if no grounded review output exists.
 
 Only create a QA checklist item when all of these are true:
 - The checklist item maps to ticket intent, acceptance criteria, or a changed code path visible in the diff.
@@ -100,7 +115,7 @@ Only create a QA checklist item when all of these are true:
 
 Acceptance criteria handling:
 - Use ticket.acceptance_criteria when it is present.
-- If ticket.acceptance_criteria is empty, use ticket.description only where success criteria, acceptance criteria, expected behaviour, or testing requirements are explicitly written there.
+- If ticket.acceptance_criteria is empty, use ticket.description only where success criteria are explicitly written.
 - Do not infer acceptance criteria from general description text.
 
 If you cannot state what is being validated and what result proves success, do not create the checklist item.
@@ -110,28 +125,13 @@ QA checklist items must validate system behaviour, not the quality of the genera
 Do not create checklist items that ask QA to:
 - inspect whether pr_comments exists
 - inspect whether qa_checklist exists
-- verify that PR comment messages are clear
-- verify that generated comments are actionable
-- verify that generated checklist items are well written
-- review the LLM response shape manually
+- verify that generated messages are clear or well written
 
 The output contract is enforced by the application validator, not by manual QA review.
 
-For output-contract tickets, QA checklist items must focus on observable behaviours such as:
-- malformed JSON is rejected
-- missing required top-level sections are rejected
-- unknown fields are rejected
-- legacy output shapes are rejected
-- invalid enum values are rejected
-- excessive verbosity is rejected
-- valid empty grounded output is accepted
-- invalid output prevents GitHub and Jira write-back
-- valid output reaches convergent write-back
-
 QA output shaping:
-
 - The QA checklist will be transformed into a human-readable Jira comment.
-- Each checklist item should map clearly to acceptance criteria or observable behaviour.
+- Each checklist item must map clearly to acceptance criteria or observable behaviour.
 - Titles must be concise and directly tied to what is being validated.
 - Steps must describe real actions QA can perform.
 - Expected results must describe observable system behaviour.
@@ -150,7 +150,7 @@ If no QA checklist items are justified:
 - return an empty qa_checklist array
 - do not create filler or generic checks
 
-If the PR already includes automated tests proving these behaviours, do not duplicate them as manual checklist items unless the ticket explicitly requires manual QA.
+If the PR already includes automated tests proving these behaviours, do not duplicate them unless explicitly required.
 
 Return ONLY valid JSON.
 
@@ -184,11 +184,9 @@ Output rules:
 - Do not include prose outside JSON.
 - Do not include JSON comments.
 - Both pr_comments and qa_checklist may be empty if no grounded review output exists.
-- Do not generate fallback, placeholder, or generic checklist items.
-- Silence is valid when the provided ticket and diff do not support a concrete finding.
+- Do not generate fallback, placeholder, or generic items.
 - Do not wrap the JSON in a code fence.
-- The first character of the response must be `{`.
-- The last character of the response must be `}`.
+- The first character must be `{` and the last `}`.
 - Keep PR comment message under 240 characters.
 - Keep PR comment rationale under 500 characters.
 - Keep QA checklist title under 160 characters.

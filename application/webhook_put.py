@@ -42,19 +42,32 @@ def handle_writeback(
 
 def _format_pr_comments(comments: list[PRComment]) -> str:
     if not comments:
-        return "No high-level PR issues identified."
+        return (
+            "AI-assisted review completed.\n\n"
+            "Scope:\n"
+            "- Code changes in the PR diff were reviewed against ticket intent.\n\n"
+            "Limitations:\n"
+            "- This review does not validate runtime behaviour, integration impact, or edge case execution.\n\n"
+            "Findings:\n"
+            "- No concrete issues were identified from the diff.\n\n"
+            "QA should:\n"
+            "- Verify behaviour in a running environment against the acceptance criteria."
+        )
 
-    return "\n".join(
-        [
+    blocks = ["PR Review Findings:"]
+
+    for comment in comments:
+        blocks.append(
             (
-                f"- `{comment.file}:{comment.line}` "
-                f"[{comment.severity}] "
-                f"{comment.category}: {comment.message}\n"
-                f"  Rationale: {comment.rationale}"
+                f"\nFile: {comment.file}:{comment.line}\n"
+                f"Severity: {comment.severity}\n"
+                f"Category: {comment.category}\n\n"
+                f"Observation:\n- {comment.message}\n\n"
+                f"Impact:\n- {comment.rationale}"
             )
-            for comment in comments
-        ]
-    )
+        )
+
+    return "\n".join(blocks)
 
 
 def _format_qa_checklist(items: list[QAChecklistItem]) -> str:
