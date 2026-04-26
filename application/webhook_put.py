@@ -73,21 +73,29 @@ def _format_pr_comments(comments: list[PRComment]) -> str:
 
     return "\n".join(blocks)
 
+
 def _format_jira_comment(analysis: LLMReviewOutput) -> str:
-    ac_findings = [
+    blocking_findings = [
         comment
         for comment in analysis.pr_comments
-        if comment.category == "consistency"
+        if (
+                comment.severity == "high"
+                or comment.category in {"consistency", "validation"}
+                or (
+                        comment.category == "risk"
+                        and comment.severity in {"medium", "high"}
+                )
+        )
     ]
 
-    if ac_findings:
+    if blocking_findings:
         blocks = [
             "Reviewed the PR against the ticket.",
             "",
             "Acceptance criteria / ticket alignment concerns:",
         ]
 
-        for finding in ac_findings:
+        for finding in blocking_findings:
             blocks.append(f"- {finding.message}")
 
         blocks.extend(
@@ -97,7 +105,7 @@ def _format_jira_comment(analysis: LLMReviewOutput) -> str:
             ]
         )
 
-        for finding in ac_findings:
+        for finding in blocking_findings:
             blocks.append(f"- {finding.rationale}")
 
         blocks.extend(
@@ -188,23 +196,28 @@ def _format_qa_checklist(items: list[QAChecklistItem]) -> str:
 
 
 def _format_jira_comment(analysis: LLMReviewOutput) -> str:
-    ac_findings = [
+    blocking_findings = [
         comment
         for comment in analysis.pr_comments
-        if comment.category == "consistency"
+        if (
+                comment.severity == "high"
+                or comment.category in {"consistency", "validation"}
+                or (
+                        comment.category == "risk"
+                        and comment.severity in {"medium", "high"}
+                )
+        )
     ]
 
-    if ac_findings:
+    if blocking_findings:
         blocks = [
             "Reviewed the PR against the ticket.",
             "",
-            "Acceptance criteria concern:",
+            "Acceptance criteria / ticket alignment concerns:",
         ]
 
-        for finding in ac_findings:
-            blocks.append(
-                f"- {finding.message}"
-            )
+        for finding in blocking_findings:
+            blocks.append(f"- {finding.message}")
 
         blocks.extend(
             [
@@ -213,24 +226,35 @@ def _format_jira_comment(analysis: LLMReviewOutput) -> str:
             ]
         )
 
-        for finding in ac_findings:
-            blocks.append(
-                f"- {finding.rationale}"
-            )
+        for finding in blocking_findings:
+            blocks.append(f"- {finding.rationale}")
 
         blocks.extend(
             [
                 "",
                 "Outcome:",
-                "- Potential acceptance criteria mismatch identified.",
+                "- Potential acceptance criteria or ticket intent mismatch identified.",
                 "",
                 "QA Action:",
-                "- Validate the affected behaviour against the acceptance criteria.",
-                "- Block progression if the expected behaviour is not present.",
-                "- Sync with the developer if the implementation intent is unclear.",
             ]
         )
+
+        if analysis.qa_checklist:
+            for item in analysis.qa_checklist:
+                blocks.append(f"- {item.title}")
+                for step in item.steps:
+                    blocks.append(f"  - {step}")
+                blocks.append(f"  Expected result: {item.expected_result}")
+        else:
+            blocks.extend(
+                [
+                    "- Validate the affected behaviour against the acceptance criteria.",
+                    "- Block progression if expected behaviour is not present.",
+                    "- Sync with the developer if implementation intent is unclear.",
+                ]
+            )
 
         return "\n".join(blocks)
 
     return _format_qa_checklist(analysis.qa_checklist)
+
