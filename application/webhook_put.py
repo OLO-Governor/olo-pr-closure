@@ -17,7 +17,7 @@ def handle_writeback(
     marker = f"<!-- prclosure:{ticket['key']} -->"
 
     pr_comment_body = _format_pr_comments(analysis.pr_comments)
-    qa_checklist_body = _format_jira_comment(analysis)
+    jira_comment_body = _format_jira_comment(analysis)
 
     github_ok = github_client.upsert_pr_comment(
         repo_owner,
@@ -32,7 +32,7 @@ def handle_writeback(
 
     jira_ok = jira_client.upsert_comment(
         ticket["key"],
-        qa_checklist_body,
+        jira_comment_body,
         marker,
     )
 
@@ -43,15 +43,15 @@ def handle_writeback(
 def _format_pr_comments(comments: list[PRComment]) -> str:
     if not comments:
         return (
-            "AI-assisted review completed.\n\n"
+            "AI-assisted diff review completed.\n\n"
             "Scope:\n"
-            "- Code changes in the PR diff were reviewed against ticket intent.\n\n"
+            "- Code changes in the PR diff were reviewed against ticket intent and acceptance criteria where "
+            "visible.\n\n"
             "Limitations:\n"
-            "- This review does not validate runtime behaviour, integration impact, or edge case execution.\n\n"
+            "- This review is static and does not validate runtime behaviour, integration execution, "
+            "or QA outcomes.\n\n"
             "Findings:\n"
-            "- No concrete issues were identified from the diff.\n\n"
-            "QA should:\n"
-            "- Verify behaviour in a running environment against the acceptance criteria."
+            "- No actionable developer findings were identified from the diff."
         )
 
     blocks = ["PR Review Findings:"]
@@ -62,12 +62,72 @@ def _format_pr_comments(comments: list[PRComment]) -> str:
                 f"\nFile: {comment.file}:{comment.line}\n"
                 f"Severity: {comment.severity}\n"
                 f"Category: {comment.category}\n\n"
-                f"Observation:\n- {comment.message}\n\n"
-                f"Impact:\n- {comment.rationale}"
+                f"Observation:\n"
+                f"- {comment.message}\n\n"
+                f"Impact:\n"
+                f"- {comment.rationale}\n\n"
+                f"Suggestion:\n"
+                f"- Address this before progressing the PR, or update the ticket if the intended behaviour has changed."
             )
         )
 
     return "\n".join(blocks)
+
+def _format_jira_comment(analysis: LLMReviewOutput) -> str:
+    ac_findings = [
+        comment
+        for comment in analysis.pr_comments
+        if comment.category == "consistency"
+    ]
+
+    if ac_findings:
+        blocks = [
+            "Reviewed the PR against the ticket.",
+            "",
+            "Acceptance criteria / ticket alignment concerns:",
+        ]
+
+        for finding in ac_findings:
+            blocks.append(f"- {finding.message}")
+
+        blocks.extend(
+            [
+                "",
+                "Observed:",
+            ]
+        )
+
+        for finding in ac_findings:
+            blocks.append(f"- {finding.rationale}")
+
+        blocks.extend(
+            [
+                "",
+                "Outcome:",
+                "- Potential acceptance criteria or ticket intent mismatch identified.",
+                "",
+                "QA Action:",
+            ]
+        )
+
+        if analysis.qa_checklist:
+            for item in analysis.qa_checklist:
+                blocks.append(f"- {item.title}")
+                for step in item.steps:
+                    blocks.append(f"  - {step}")
+                blocks.append(f"  Expected result: {item.expected_result}")
+        else:
+            blocks.extend(
+                [
+                    "- Validate the affected behaviour against the acceptance criteria.",
+                    "- Block progression if expected behaviour is not present.",
+                    "- Sync with the developer if implementation intent is unclear.",
+                ]
+            )
+
+        return "\n".join(blocks)
+
+    return _format_qa_checklist(analysis.qa_checklist)
 
 
 def _format_qa_checklist(items: list[QAChecklistItem]) -> str:
