@@ -62,13 +62,14 @@ def _format_qa_checklist(items: list[QAChecklistItem]) -> str:
         return (
             "Reviewed the PR against the ticket.\n\n"
             "Validated:\n"
-            "- Acceptance criteria were reviewed against the changes.\n\n"
+            "- Acceptance criteria were checked against the changes where possible from the diff.\n\n"
             "Observed:\n"
-            "- No unexpected behaviour or risks stood out from the review.\n\n"
+            "- No specific risks or edge cases were identified from the changes.\n\n"
             "Outcome:\n"
-            "- No gaps identified.\n\n"
+            "- No gaps identified from code review. Behaviour should be confirmed in QA.\n\n"
             "QA Action:\n"
-            "- Run standard checks and confirm behaviour against the acceptance criteria."
+            "- Verify acceptance criteria are met in a running environment.\n"
+            "- Confirm no regression in related behaviour."
         )
 
     blocks = [
