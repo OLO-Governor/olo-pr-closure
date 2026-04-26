@@ -17,7 +17,7 @@ def handle_writeback(
     marker = f"<!-- prclosure:{ticket['key']} -->"
 
     pr_comment_body = _format_pr_comments(analysis.pr_comments)
-    qa_checklist_body = _format_qa_checklist(analysis.qa_checklist)
+    qa_checklist_body = _format_jira_comment(analysis)
 
     github_ok = github_client.upsert_pr_comment(
         repo_owner,
@@ -125,3 +125,52 @@ def _format_qa_checklist(items: list[QAChecklistItem]) -> str:
     )
 
     return "\n".join(blocks)
+
+
+def _format_jira_comment(analysis: LLMReviewOutput) -> str:
+    ac_findings = [
+        comment
+        for comment in analysis.pr_comments
+        if comment.category == "consistency"
+    ]
+
+    if ac_findings:
+        blocks = [
+            "Reviewed the PR against the ticket.",
+            "",
+            "Acceptance criteria concern:",
+        ]
+
+        for finding in ac_findings:
+            blocks.append(
+                f"- {finding.message}"
+            )
+
+        blocks.extend(
+            [
+                "",
+                "Observed:",
+            ]
+        )
+
+        for finding in ac_findings:
+            blocks.append(
+                f"- {finding.rationale}"
+            )
+
+        blocks.extend(
+            [
+                "",
+                "Outcome:",
+                "- Potential acceptance criteria mismatch identified.",
+                "",
+                "QA Action:",
+                "- Validate the affected behaviour against the acceptance criteria.",
+                "- Block progression if the expected behaviour is not present.",
+                "- Sync with the developer if the implementation intent is unclear.",
+            ]
+        )
+
+        return "\n".join(blocks)
+
+    return _format_qa_checklist(analysis.qa_checklist)

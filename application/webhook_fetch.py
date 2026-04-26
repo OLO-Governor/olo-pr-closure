@@ -1,3 +1,4 @@
+import logging
 import requests
 
 import domain.services
@@ -6,6 +7,8 @@ from domain.output_contract import validate_llm_output
 from infrastructure.github_client import github_client
 from infrastructure.jira_client import jira_client
 from infrastructure.openwebui_client import openwebui_client
+
+logger = logging.getLogger(__name__)
 
 
 def handle_webhook(payload):
@@ -57,6 +60,8 @@ def handle_webhook(payload):
 
     content = _extract_llm_content(analysis)
 
+    logger.warning("PRClosure raw LLM content:\n%s", content)
+
     validation = validate_llm_output(content)
     if not validation.valid or validation.output is None:
         return {
@@ -64,6 +69,8 @@ def handle_webhook(payload):
             "validation_errors": validation.errors,
             "raw_llm_output": content,
         }, "Invalid LLM output"
+
+    logger.warning("PRClosure parsed LLM output:\n%s", validation.output)
 
     try:
         handle_writeback(
