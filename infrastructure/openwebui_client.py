@@ -7,7 +7,7 @@ from infrastructure.config import config
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SYSTEM_PROMPT_PATH = PROJECT_ROOT / "prompts" / "pr_review_system_prompt.txt"
+DEFAULT_SYSTEM_PROMPT_PATH = PROJECT_ROOT / "prompts" / "pr_review_system_prompt.txt"
 
 
 class OpenWebUIClient:
@@ -50,12 +50,28 @@ class OpenWebUIClient:
 
     @staticmethod
     def _load_system_prompt() -> str:
+        prompt_path = OpenWebUIClient._resolve_system_prompt_path()
+
         try:
-            return SYSTEM_PROMPT_PATH.read_text(encoding="utf-8").strip()
+            return prompt_path.read_text(encoding="utf-8").strip()
         except FileNotFoundError as exc:
             raise RuntimeError(
-                f"System prompt file not found: {SYSTEM_PROMPT_PATH}"
+                f"System prompt file not found: {prompt_path}"
             ) from exc
+
+    @staticmethod
+    def _resolve_system_prompt_path() -> Path:
+        configured_path = config.PRCLOSURE_PROMPT_FILE
+
+        if configured_path:
+            path = Path(configured_path)
+
+            if not path.is_absolute():
+                return PROJECT_ROOT / path
+
+            return path
+
+        return DEFAULT_SYSTEM_PROMPT_PATH
 
     @staticmethod
     def _format_context(context) -> str:

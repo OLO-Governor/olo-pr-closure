@@ -18,5 +18,7 @@ class Config:
     OPENWEBUI_MODEL = os.getenv("OPENWEBUI_MODEL")
     OPENWEBUI_API_KEY = os.getenv("OPENWEBUI_API_KEY")
 
+    PRCLOSURE_PROMPT_FILE = os.getenv("PRCLOSURE_PROMPT_FILE")
+
 
 config = Config()
