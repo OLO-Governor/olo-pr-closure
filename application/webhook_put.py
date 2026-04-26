@@ -2,10 +2,10 @@ from domain.models import LLMReviewOutput, PRComment, QAChecklistItem
 
 
 def handle_writeback(
-    github_client,
-    jira_client,
-    context,
-    analysis: LLMReviewOutput,
+        github_client,
+        jira_client,
+        context,
+        analysis: LLMReviewOutput,
 ):
     pr = context["pr"]
     ticket = context["ticket"]
@@ -57,7 +57,7 @@ def _format_pr_comments(comments: list[PRComment]) -> str:
     )
 
 
-def _format_qa_checklist(items: list[QAChecklistItem]) -> str:
+def _format_qa_checklist_old(items: list[QAChecklistItem]) -> str:
     if not items:
         return "No additional QA checks required."
 
@@ -80,3 +80,59 @@ def _format_qa_checklist(items: list[QAChecklistItem]) -> str:
         )
 
     return "\n\n".join(blocks)
+
+
+def _format_qa_checklist(items: list[QAChecklistItem]) -> str:
+    if not items:
+        return (
+            "Reviewed the PR against the ticket.\n\n"
+            "Validated:\n"
+            "- No additional acceptance-criteria-specific QA checks were identified from the automated review.\n\n"
+            "Observed:\n"
+            "- Nothing in the review output highlighted extra behavioural risk for QA.\n\n"
+            "Outcome:\n"
+            "- No gaps identified by PRClosure.\n\n"
+            "QA Action:\n"
+            "- Run standard checks and confirm behaviour against the ticket acceptance criteria."
+        )
+
+    blocks = [
+        "Reviewed the PR against the ticket.",
+        "",
+        "Validated:",
+    ]
+
+    for item in items:
+        blocks.append(f"- {item.acceptance_criteria_ref}: {item.title}")
+
+    blocks.extend(
+        [
+            "",
+            "Observed:",
+        ]
+    )
+
+    for item in items:
+        for step in item.steps:
+            blocks.append(f"- {step}")
+
+    blocks.extend(
+        [
+            "",
+            "Outcome:",
+        ]
+    )
+
+    for item in items:
+        blocks.append(f"- {item.expected_result}")
+
+    blocks.extend(
+        [
+            "",
+            "QA Action:",
+            "- Run the checks above and confirm behaviour against the acceptance criteria.",
+            "- Block progression if the observed behaviour does not match the expected result.",
+        ]
+    )
+
+    return "\n".join(blocks)
