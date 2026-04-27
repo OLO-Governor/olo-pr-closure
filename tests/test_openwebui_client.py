@@ -29,6 +29,10 @@ def test_format_context_returns_stable_json():
 
     assert parsed["instruction"] == (
         "Review the provided PR against the provided ticket context. "
+        "First, extract the acceptance criteria from ticket.acceptance_criteria. "
+        "If ticket.acceptance_criteria is empty, extract the acceptance criteria from ticket.description. "
+        "Treat any text under or after an 'Acceptance Criteria' heading in the description as acceptance criteria. "
+        "Then compare the PR diff against those acceptance criteria and ticket intent. "
         "Return only JSON matching the required output contract."
     )
     assert parsed["context"]["ticket"]["key"] == "OPRC-3"

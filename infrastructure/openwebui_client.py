@@ -77,8 +77,15 @@ class OpenWebUIClient:
     def _format_context(context) -> str:
         return json.dumps(
             {
-                "instruction": "Review the provided PR against the provided ticket context. Return only JSON matching "
-                               "the required output contract.",
+                "instruction": (
+                    "Review the provided PR against the provided ticket context. "
+                    "First, extract the acceptance criteria from ticket.acceptance_criteria. "
+                    "If ticket.acceptance_criteria is empty, extract the acceptance criteria from ticket.description. "
+                    "Treat any text under or after an 'Acceptance Criteria' heading in the description as acceptance "
+                    "criteria. "
+                    "Then compare the PR diff against those acceptance criteria and ticket intent. "
+                    "Return only JSON matching the required output contract."
+                ),
                 "context": context,
             },
             ensure_ascii=False,

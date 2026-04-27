@@ -221,3 +221,40 @@ def test_handle_writeback_formats_empty_qa_output_as_human_guidance():
     assert "Outcome:" in body
     assert "QA Action:" in body
     assert "No additional QA checks required." not in body
+
+
+def test_empty_pr_comments_returns_scoped_review_message():
+    github_client = FakeGitHubClient()
+    jira_client = FakeJiraClient()
+
+    context = {
+        "pr": {
+            "repo_owner": "OLO-Governor",
+            "repo_name": "olo-pr-closure",
+            "number": 12,
+        },
+        "ticket": {
+            "key": "OPRC-19",
+        },
+    }
+
+    analysis = LLMReviewOutput(
+        pr_comments=[],
+        qa_checklist=[],
+    )
+
+    handle_writeback(
+        github_client,
+        jira_client,
+        context,
+        analysis,
+    )
+
+    body = github_client.calls[0]["body"]
+
+    assert "AI-assisted diff review completed." in body
+    assert "Scope:" in body
+    assert "Limitations:" in body
+    assert "Findings:" in body
+    assert "QA should:" not in body
+    assert "QA Action:" not in body
