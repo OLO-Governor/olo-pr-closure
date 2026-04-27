@@ -14,19 +14,29 @@ It is designed as a **reference implementation** of a controlled AI-assisted eng
 
 ## Flow
 
-```
+```text
 GitHub PR Event
   → FastAPI /webhook/github
-  → Extract ticket key (branch or title)
-  → Fetch Jira ticket (description, acceptance criteria)
-  → Fetch PR diff (GitHub API)
+  → Validate GitHub webhook signature
+  → Return 202 Accepted
+  → Process PR in background
+  → Extract ticket key from branch or PR title
+  → Fetch Jira ticket context
+       - summary
+       - description
+       - acceptance criteria field when configured
+  → Fetch PR diff from GitHub
   → Build unified context payload
-  → Send to OpenWebUI (LLM)
-  → Receive structured output
-  → Parse output (comments + checklist)
-  → Write-back (upsert):
-       PR comments → GitHub (single evolving comment)
-       QA checklist → Jira (draft, updated in place)
+  → Send deterministic context to OpenWebUI
+  → LLM extracts acceptance criteria
+       - from ticket.acceptance_criteria when present
+       - from ticket.description when acceptance_criteria is empty
+  → Receive structured JSON output
+  → Validate strict output contract
+  → Block write-back if output is invalid
+  → Write-back using marker-based upsert:
+       - GitHub → developer-facing PR review comment
+       - Jira → QA-facing review handover / validation guidance
 ```
 
 ---
@@ -84,18 +94,30 @@ main.py
 
 Create a `.env` file based on:
 
-```
+```env
 GITHUB_TOKEN=
 GITHUB_WEBHOOK_SECRET=
 
 JIRA_BASE_URL=
 JIRA_EMAIL=
 JIRA_API_TOKEN=
+JIRA_API_VERSION=3
+JIRA_ACCEPTANCE_CRITERIA_FIELD=
 
 OPENWEBUI_URL=
 OPENWEBUI_API_KEY=
 OPENWEBUI_MODEL=
+
+PRCLOSURE_PROMPT_FILE=
 ```
+
+Notes:
+
+``JIRA_ACCEPTANCE_CRITERIA_FIELD`` is optional.
+If ``JIRA_ACCEPTANCE_CRITERIA_FIELD`` is empty or returns no value, the LLM is instructed to extract acceptance
+criteria from the Jira description.
+``PRCLOSURE_PROMPT_FILE`` is optional.
+If ``PRCLOSURE_PROMPT_FILE`` is not set, the default prompt is loaded from: ``prompts/pr_review_system_prompt.txt``
 
 ---
 
@@ -147,17 +169,44 @@ Configure a webhook on your repository:
 
 ## Writeback Model
 
-The system uses a **converging upsert model**:
+The system uses a converging upsert model.
 
-- One comment per PR
-- One checklist per Jira ticket
-- Each run updates existing outputs instead of creating new ones
+Each run updates existing comments instead of creating duplicates.
 
 Marker used:
 
 ```
 <!-- prclosure:{ticket_key} -->
 ```
+
+Write-back surfaces:
+
+GitHub:
+
+- Developer-facing PR review comment
+
+Jira:
+
+- QA-facing review handover comment
+
+GitHub comments are intended for developers and may include:
+
+* file and line
+* severity
+* category
+* observation
+* impact
+* suggestion
+
+Jira comments are intended for QA and may include:
+
+* reviewed ticket context
+* acceptance criteria / ticket alignment concerns
+* observed review findings
+* outcome
+* QA action
+
+Jira can surface blocking PR findings when they affect ticket intent, acceptance criteria, validation, or behavioural risk.
 
 ---
 
@@ -166,13 +215,83 @@ Marker used:
 The system enforces strict boundaries:
 
 - Missing ticket key → processing blocked
-- Ticket not found → blocked
-- Empty diff → skipped
-- Invalid webhook signature → rejected (401)
-- API failure → no write-back
-- LLM unavailable → no output
+- Ticket not found → processing blocked
+- Empty diff → processing skipped
+- Invalid webhook signature → rejected with 401
+- LLM unavailable → no write-back
+- Invalid LLM output → no write-back
+- GitHub write-back failure → Jira write-back is not attempted
+- Jira write-back failure → processing raises a write-back failure
 
-No partial or unsafe writes occur.
+No invalid LLM output is written to GitHub or Jira.
+
+## LLM Output Contract
+
+The LLM must return JSON only.
+
+Expected top-level shape:
+
+```json
+{
+  "pr_comments": [],
+  "qa_checklist": []
+}
+```
+
+Invalid output is blocked before write-back.
+
+The validator rejects:
+
+* non-JSON output
+* missing top-level keys
+* unknown top-level keys
+* invalid PR comment shape
+* invalid QA checklist shape
+* invalid severity values
+* invalid category values
+* excessive field length
+
+The LLM is advisory only.
+
+It has no authority to:
+
+* approve a pull request
+* merge a pull request
+* close a Jira ticket
+* mark QA as passed
+
+---
+
+## Role Boundaries
+
+PRClosure separates output by audience.
+
+```text
+GitHub = developer-facing
+Jira   = QA-facing
+```
+
+GitHub should contain:
+
+* code-level review findings
+* implementation risks
+* validation issues
+* ticket or acceptance-criteria mismatches
+* developer-facing suggestions
+
+Jira should contain:
+
+* QA validation guidance
+* acceptance criteria concerns
+* behavioural risks requiring QA attention
+* clear QA action
+
+PRClosure must not imply that QA can be skipped.
+
+Clean review output means: ``No actionable developer findings were identified from the diff.``
+It does not mean: ``The change is proven correct.``
+
+Runtime behaviour remains QA-owned.
 
 ---
 
