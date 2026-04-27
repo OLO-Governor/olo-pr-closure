@@ -14,23 +14,31 @@ It is designed as a **reference implementation** of a controlled AI-assisted eng
 
 ## Why PRClosure exists
 
-PRClosure is not trying to replace code review, developers, or quality engineers.
+PRClosure is built around a simple leadership belief:
 
-It is about tightening the space between them.
+the best work comes from people who want to do it, not people who are pushed into it.
 
-In a healthy team, development and quality should not feel like separate lanes with a handover wall in the middle. They should work around the same context, the same risks, and the same definition of done.
+Happy teams move faster, catch more, and care about the outcome. Worn out teams just ship and survive.
 
-PRClosure is a small experiment in that direction.
+In strong teams, developers, quality engineers, product people, and delivery leads are not separate lanes with handover walls between them. They share context, understand risk, and move toward the same definition of done.
+
+PRClosure is a small experiment in tightening that space.
 
 A pull request comes in, the related Jira context and PR diff are gathered, an LLM produces a review, and the output has to pass a strict contract before anything is written back.
 
 If the output is invalid, it blocks.
 
+That boundary matters.
+
 The goal is not autonomous review.
 
-The goal is shared context, visible risk, earlier feedback, and more confidence before work moves on.
+The goal is to quietly remove friction, surface risk earlier, and share context more clearly so the people doing the real work can spend more time on the parts that matter.
 
-AI is only useful here if it strengthens the team’s judgement, not if it bypasses it.
+Motivation built on wanting to achieve outlasts any deadline you can put on a wall.
+
+For me, the point is simple:
+
+more shared context, less handover theatre.
 
 ---
 
