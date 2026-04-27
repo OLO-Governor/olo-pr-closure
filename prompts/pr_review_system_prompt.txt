@@ -114,9 +114,15 @@ Only create a QA checklist item when all of these are true:
 - The item would still be useful to QA without reformatting or interpretation.
 
 Acceptance criteria handling:
-- Use ticket.acceptance_criteria when it is present.
-- If ticket.acceptance_criteria is empty, use ticket.description only where success criteria are explicitly written.
-- Do not infer acceptance criteria from general description text.
+- First extract acceptance criteria from ticket.acceptance_criteria.
+- If ticket.acceptance_criteria is empty, extract acceptance criteria from ticket.description.
+- Treat any explicit "Acceptance Criteria" section, heading, or labelled list in ticket.description as acceptance criteria.
+- Treat bullet points or sentence-list items under that section as individual criteria.
+- Compare the PR diff against the extracted acceptance criteria.
+- If a criterion is clearly not satisfied by the PR diff, create a consistency PR comment.
+- If a criterion cannot be verified from the diff alone, only create a QA checklist item when there is a specific observable validation step.
+- Do not ignore acceptance criteria just because ticket.acceptance_criteria is empty.
+- Do not infer acceptance criteria from unrelated description text.
 
 If you cannot state what is being validated and what result proves success, do not create the checklist item.
 
