@@ -57,26 +57,23 @@ GitHub PR Event
 
 ```
 application/
-  webhook_fetch.py
-  webhook_put.py
+  webhook_fetch.py       # Fetches external context required for review processing
+  webhook_put.py         # Handles convergent write-back to GitHub and Jira
 
 domain/
-  models.py
-  services.py
+  models.py              # Shared request, ticket, PR, and LLM output models
+  services.py            # Core orchestration and review processing logic
 
 infrastructure/
-  config.py
-  github_client.py
-  jira_client.py
-  openwebui_client.py
+  config.py              # Environment and runtime configuration
+  github_client.py       # GitHub API client for PR diffs and comments
+  jira_client.py         # Jira API client for ticket context and comments
+  openwebui_client.py    # OpenWebUI API client for local LLM inference
 
 presentation/
-  routes.py
-  middleware/github_signature.py
-
-tests/
-
-main.py
+  routes.py              # FastAPI webhook route definitions
+  middleware/
+    github_signature.py  # GitHub webhook HMAC signature validation
 ```
 
 ---
@@ -125,7 +122,11 @@ If ``PRCLOSURE_PROMPT_FILE`` is not set, the default prompt is loaded from: ``pr
 
 ```
 python -m venv venv
-venv\Scripts\activate    # Windows
+# Windows
+venv\Scripts\activate
+
+# macOS / Linux
+source venv/bin/activate
 
 pip install -r requirements.txt
 ```
@@ -164,6 +165,31 @@ Configure a webhook on your repository:
 - Must be running and accessible via `OPENWEBUI_URL`
 - Used for LLM inference only
 - Expected to return structured JSON output
+
+---
+
+## OpenWebUI Requirements
+
+PRClosure sends deterministic review context to OpenWebUI and expects JSON-only output matching the LLM Output Contract.
+
+Recommended model behaviour:
+
+- follows system prompts reliably
+- returns JSON only
+- avoids Markdown wrappers
+- does not invent ticket context
+- does not approve, merge, or close work
+- reports uncertainty instead of fabricating findings
+
+The prompt is loaded from:
+
+`prompts/pr_review_system_prompt.txt`
+
+or from:
+
+`PRCLOSURE_PROMPT_FILE`
+
+when configured.
 
 ---
 
