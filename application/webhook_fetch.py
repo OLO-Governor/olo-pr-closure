@@ -6,7 +6,7 @@ from application.webhook_put import handle_writeback
 from domain.output_contract import validate_llm_output
 from infrastructure.github_client import github_client
 from infrastructure.jira_client import jira_client
-from infrastructure.openwebui_client import openwebui_client
+from infrastructure.ollama_client import ollama_client
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ def handle_webhook(payload):
         ticket,
     )
 
-    analysis = openwebui_client.analyze(context)
+    analysis = ollama_client.analyze(context)
     if not analysis:
         return context, "LLM unavailable"
 
@@ -94,6 +94,6 @@ def handle_webhook(payload):
 
 def _extract_llm_content(analysis):
     try:
-        return analysis["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, TypeError):
+        return analysis["message"]["content"]
+    except (KeyError, TypeError):
         return None
