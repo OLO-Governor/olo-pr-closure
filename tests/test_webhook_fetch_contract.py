@@ -1,5 +1,6 @@
 from domain.models import LLMReviewOutput
 from application import webhook_fetch
+import json
 
 
 class FakeJiraClient:
@@ -33,6 +34,16 @@ class FakeOpenWebUIClient:
             ]
         }
 
+class FakeOllamaClient:
+    def __init__(self, content):
+        self.content = content
+
+    def analyze(self, context):
+        return {
+            "message": {
+                "content": self.content,
+            }
+        }
 
 def _payload():
     return {
@@ -63,8 +74,8 @@ def test_invalid_llm_output_blocks_writeback(monkeypatch):
     monkeypatch.setattr(webhook_fetch, "github_client", FakeGitHubClient())
     monkeypatch.setattr(
         webhook_fetch,
-        "openwebui_client",
-        FakeOpenWebUIClient("## Not JSON"),
+        "ollama_client",
+        FakeOllamaClient("## Not JSON"),
     )
     monkeypatch.setattr(webhook_fetch, "handle_writeback", fake_writeback)
 
@@ -116,8 +127,8 @@ def test_valid_llm_output_reaches_writeback(monkeypatch):
     monkeypatch.setattr(webhook_fetch, "github_client", FakeGitHubClient())
     monkeypatch.setattr(
         webhook_fetch,
-        "openwebui_client",
-        FakeOpenWebUIClient(valid_content),
+        "ollama_client",
+        FakeOllamaClient(valid_content),
     )
     monkeypatch.setattr(webhook_fetch, "handle_writeback", fake_writeback)
 

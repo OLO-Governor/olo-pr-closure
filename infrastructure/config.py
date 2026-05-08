@@ -20,5 +20,17 @@ class Config:
 
     PRCLOSURE_PROMPT_FILE = os.getenv("PRCLOSURE_PROMPT_FILE")
 
+    OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434")
+    OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "prclosure-review")
+    OLLAMA_TIMEOUT_SECONDS = int(os.getenv("OLLAMA_TIMEOUT_SECONDS", "180"))
+
+    OLLAMA_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "32768"))
+    OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "2048"))
+    OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", "0.1"))
+    OLLAMA_TOP_P = float(os.getenv("OLLAMA_TOP_P", "0.8"))
+    OLLAMA_TOP_K = int(os.getenv("OLLAMA_TOP_K", "20"))
+    OLLAMA_REPEAT_PENALTY = float(os.getenv("OLLAMA_REPEAT_PENALTY", "1.05"))
+    OLLAMA_SEED = int(os.getenv("OLLAMA_SEED", "42"))
+
 
 config = Config()
