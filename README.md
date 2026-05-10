@@ -2,19 +2,27 @@
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-webhook%20service-009688) ![OpenWebUI](https://img.shields.io/badge/LLM-OpenWebUI%20local-6f42c1) ![Tests](https://img.shields.io/badge/tests-pytest-brightgreen) ![Status](https://img.shields.io/badge/status-working%20reference%20implementation-blue) ![License](https://img.shields.io/badge/license-internal%20%2F%20personal-lightgrey)
 
-PRClosure is a FastAPI webhook service that connects GitHub, Jira, and a local LLM through OpenWebUI to review pull requests against ticket intent and acceptance criteria.
+PRClosure is a reference implementation of bounded AI-assisted engineering governance.
 
-It is built for the handover point between development and quality: helping developers and QA share clearer context, surface risk earlier, and reduce the "does this actually meet the ticket?" loop.
+It demonstrates how an LLM can support pull request review and QA handover without owning approval, merge, QA pass, or ticket closure authority.
+
+The system uses deterministic context, strict output validation, advisory-only write-back, and human-owned closure.
+
+## Summary
+
+PRClosure is a FastAPI webhook service that connects GitHub, Jira, and a local LLM through OpenWebUI.
+
+It reviews pull requests against Jira ticket intent and acceptance criteria, then writes bounded feedback back to GitHub and Jira.
+
+It is built for the handover point between development and quality: giving QA and engineering more confidence that acceptance criteria have been considered, without adding more process noise.
 
 ## Why PRClosure exists
 
 PRClosure is built around a simple leadership belief:
 
-> People do their best work when they understand the purpose, not just the task.
+> Context should move with the work.
 
-Happy teams move faster, catch more, and care about the outcome. Worn-out teams just ship and survive.
-
-Strong teams keep context moving with the work. Developers, quality engineers, product people, and delivery leads all need the same thread of meaning if they are going to move toward the same definition of done.
+Strong teams do not only move tasks through a workflow. They move meaning, risk, intent, and evidence with the work.
 
 A pull request can be marked as done, but QA still has to answer the harder question:
 
@@ -22,7 +30,7 @@ A pull request can be marked as done, but QA still has to answer the harder ques
 
 That question should not live only in someone’s head.
 
-PRClosure is a small experiment in tightening that space.
+PRClosure tightens that boundary.
 
 It gathers the pull request diff and the related Jira ticket context, then asks a local LLM to review the work against that context.
 
@@ -32,13 +40,79 @@ If the output is invalid, it blocks.
 
 That boundary matters.
 
+The AI is useful, but it is not trusted blindly.
+
 PRClosure stays advisory. It gives the team a structured second read before QA begins, so risk is easier to see and context is easier to share.
 
 Good delivery keeps meaning intact as the work moves.
 
-For me, the point is simple:
+## Governance model
 
-> Context should move with the work.
+PRClosure governs AI-assisted delivery through five boundaries.
+
+| Boundary | Purpose |
+|---|---|
+| Input boundary | Only valid GitHub webhook events are accepted, and ticket context is fetched from Jira |
+| Context boundary | The LLM receives deterministic PR and ticket context rather than free-form prompts |
+| Output boundary | The LLM response must match a strict JSON contract before write-back |
+| Authority boundary | The AI remains advisory and cannot approve, merge, pass QA, or close tickets |
+| Write-back boundary | Marker-based convergence prevents duplicate or drifting AI comments |
+
+This is the core governance principle:
+
+> AI can assist delivery, but authority remains with people.
+
+## Governance limits
+
+PRClosure does not claim full organisation-wide AI governance coverage.
+
+It does not currently include:
+
+- model benchmarking
+- model risk scoring
+- audit dashboards
+- policy approval workflows
+- human escalation matrices
+- organisation-wide AI adoption controls
+- multi-tool AI governance reporting
+- runtime QA execution
+- security review automation
+
+It focuses on one controlled delivery boundary:
+
+```text
+Pull request review -> QA handover
+```
+
+That boundary is deliberately narrow.
+
+The goal is not to replace engineering judgement.
+
+The goal is to make AI assistance bounded, visible, validated, and useful.
+
+## Workflow-shaped, not tool-shaped
+
+PRClosure currently uses Jira and GitHub as the chosen delivery context.
+
+That is a pragmatic design choice.
+
+Making every project tool swappable upfront would add complexity before proving value.
+
+The important abstraction is not the specific tools. The important abstraction is the workflow:
+
+```text
+ticket context + code change context -> bounded AI review -> validated output -> human-owned decision
+```
+
+If taken further, Jira and GitHub should sit behind interfaces so the application layer only cares about:
+
+- ticket context
+- code change context
+- developer-facing write-back
+- QA-facing write-back
+- traceability between work item, pull request, review output, and human decision
+
+This keeps the system shaped around the delivery workflow, not around a single tool stack.
 
 ## What PRClosure does
 
@@ -84,6 +158,10 @@ The change is proven correct.
 
 Runtime behaviour remains QA-owned.
 
+Engineering judgement remains human-owned.
+
+Ticket closure remains human-owned.
+
 ## Who this is for
 
 PRClosure is useful for teams that want a controlled AI-assisted review handover between development and quality.
@@ -95,6 +173,7 @@ It is designed for:
 - local-first LLM workflows through OpenWebUI
 - environments where AI output must be bounded, validated, and advisory
 - teams that want fewer vague QA handovers and more explicit validation context
+- teams exploring practical AI engineering governance patterns
 
 It is not currently packaged as a GitHub Action, hosted SaaS product, or public bot.
 
@@ -256,13 +335,14 @@ GitHub PR Event
   -> Extract ticket key from branch or PR title
   -> Fetch Jira ticket context
   -> Fetch PR diff from GitHub
-  -> Build unified context payload
+  -> Build deterministic context payload
   -> Send context to OpenWebUI
   -> Receive structured JSON output
   -> Validate strict output contract
   -> Block write-back if output is invalid
   -> Upsert GitHub developer-facing comment
   -> Upsert Jira QA-facing handover comment
+  -> Return control to humans
 ```
 
 ## Example output
@@ -318,6 +398,8 @@ The LLM must return a JSON object with exactly two top-level keys:
 ```
 
 Unknown top-level keys are rejected.
+
+Both arrays may be empty when there are no grounded findings.
 
 ### `pr_comments`
 
@@ -460,40 +542,48 @@ The test suite covers:
 
 ```text
 .
-├── main.py
-├── README.md
-├── requirements.txt
-├── test_main.http
-├── application/
+├── application
+│   ├── __init__.py
 │   ├── background_tasks.py
 │   ├── webhook_fetch.py
 │   └── webhook_put.py
-├── domain/
+├── domain
+│   ├── __init__.py
 │   ├── models.py
 │   ├── output_contract.py
 │   └── services.py
-├── infrastructure/
+├── infrastructure
+│   ├── __init__.py
 │   ├── config.py
 │   ├── github_client.py
 │   ├── jira_client.py
+│   ├── ollama_client.py
 │   └── openwebui_client.py
-├── presentation/
-│   ├── routes.py
-│   └── middleware/
-│       └── github_signature.py
-├── prompts/
+├── presentation
+│   ├── middleware
+│   │   ├── __init__.py
+│   │   └── github_signature.py
+│   ├── __init__.py
+│   └── routes.py
+├── prompts
 │   └── pr_review_system_prompt.txt
-└── tests/
-    ├── conftest.py
-    ├── test_background_tasks.py
-    ├── test_context.py
-    ├── test_openwebui_client.py
-    ├── test_output_contract.py
-    ├── test_parser.py
-    ├── test_routes.py
-    ├── test_ticket.py
-    ├── test_webhook_fetch_contract.py
-    └── test_writeback.py
+├── tests
+│   ├── conftest.py
+│   ├── test_background_tasks.py
+│   ├── test_context.py
+│   ├── test_openwebui_client.py
+│   ├── test_output_contract.py
+│   ├── test_parser.py
+│   ├── test_routes.py
+│   ├── test_ticket.py
+│   ├── test_webhook_fetch_contract.py
+│   └── test_writeback.py
+├── .env.example
+├── .gitignore
+├── main.py
+├── README.md
+├── requirements.txt
+└── test_main.http
 ```
 
 ### Key areas
@@ -502,29 +592,29 @@ The test suite covers:
 |---|---|
 | `main.py` | FastAPI application entry point |
 | `application/` | Orchestration layer for webhook processing, background execution, fetch, and write-back |
-| `domain/` | Core models, parsing, validation, and service logic |
+| `domain/` | Core models, parsing, validation, and output contract enforcement |
 | `infrastructure/` | External system clients and runtime configuration |
 | `presentation/` | HTTP routes and request validation middleware |
 | `prompts/` | Default LLM review prompt |
 | `tests/` | Unit and contract tests for routing, parsing, validation, clients, and write-back behaviour |
 
-## Suggested GitHub repository description
+## Repository metadata
 
-Use this as the repository About description:
+Suggested GitHub repository description:
 
 ```text
-FastAPI service that reviews GitHub PRs against Jira ticket context using a local OpenWebUI LLM, then writes bounded developer and QA handover feedback.
+Reference implementation for bounded AI-assisted engineering governance across GitHub, Jira, QA handover, and local LLM review.
 ```
 
 Suggested topics:
 
 ```text
-fastapi github jira openwebui llm qa pull-request-review ai-assisted-review webhook
+ai-governance ai-assisted-development llm-orchestration github jira fastapi openwebui qa-automation pull-request-review engineering-leadership
 ```
 
 ## Status
 
-PRClosure is a working reference implementation of bounded AI-assisted engineering workflow orchestration.
+PRClosure is a working reference implementation of bounded AI-assisted engineering workflow governance.
 
 It focuses on:
 
@@ -533,6 +623,7 @@ It focuses on:
 - convergence
 - local-first LLM use
 - developer and QA alignment
+- human-owned delivery authority
 
 ## License
 
