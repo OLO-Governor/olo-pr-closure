@@ -1,6 +1,6 @@
 # PRClosure
 
-![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-webhook%20service-009688) ![OpenWebUI](https://img.shields.io/badge/LLM-OpenWebUI%20local-6f42c1) ![Tests](https://img.shields.io/badge/tests-pytest-brightgreen) ![Status](https://img.shields.io/badge/status-working%20reference%20implementation-blue) ![License](https://img.shields.io/badge/license-internal%20%2F%20personal-lightgrey)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-webhook%20service-009688) ![LLM](https://img.shields.io/badge/LLM-configured%20local%20service-6f42c1) ![Tests](https://img.shields.io/badge/tests-pytest-brightgreen) ![Status](https://img.shields.io/badge/status-working%20reference%20implementation-blue) ![License](https://img.shields.io/badge/license-internal%20%2F%20personal-lightgrey)
 
 PRClosure is a reference implementation of bounded AI-assisted engineering governance.
 
@@ -10,7 +10,7 @@ The system uses deterministic context, strict output validation, advisory-only w
 
 ## Summary
 
-PRClosure is a FastAPI webhook service that connects GitHub, Jira, and a local LLM through OpenWebUI.
+PRClosure is a FastAPI webhook service that connects GitHub, Jira, and a configured local LLM service.
 
 It reviews pull requests against Jira ticket intent and acceptance criteria, then writes bounded feedback back to GitHub and Jira.
 
@@ -123,7 +123,7 @@ This keeps the system shaped around the delivery workflow, not around a single t
 - Extracts the ticket key from the branch name or PR title
 - Fetches Jira ticket context
 - Fetches the GitHub PR diff
-- Sends deterministic review context to OpenWebUI
+- Sends deterministic review context to the configured LLM service
 - Requires structured JSON output from the LLM
 - Validates the output before write-back
 - Writes developer-facing feedback to GitHub
@@ -170,7 +170,7 @@ It is designed for:
 
 - engineering teams using GitHub pull requests
 - teams using Jira tickets with acceptance criteria or detailed descriptions
-- local-first LLM workflows through OpenWebUI
+- local-first or private LLM workflows
 - environments where AI output must be bounded, validated, and advisory
 - teams that want fewer vague QA handovers and more explicit validation context
 - teams exploring practical AI engineering governance patterns
@@ -233,8 +233,8 @@ POST /webhook/github
 - Python 3.10+
 - GitHub repository with webhook access
 - Jira account with API access
-- OpenWebUI running locally or accessible over HTTP
-- A local or hosted model available through OpenWebUI
+- A configured LLM service reachable over HTTP
+- A local or hosted model available through the configured LLM service
 - A reachable webhook URL for GitHub delivery
 
 For local webhook testing, expose the service through a tunnel or reverse proxy, then point the GitHub webhook at:
@@ -257,9 +257,16 @@ JIRA_API_TOKEN=
 JIRA_API_VERSION=3
 JIRA_ACCEPTANCE_CRITERIA_FIELD=
 
-OPENWEBUI_URL=
-OPENWEBUI_API_KEY=
-OPENWEBUI_MODEL=qwen3:30b-a3b
+OLLAMA_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=prclosure-review
+OLLAMA_TIMEOUT_SECONDS=180
+OLLAMA_NUM_CTX=32768
+OLLAMA_NUM_PREDICT=2048
+OLLAMA_TEMPERATURE=0.1
+OLLAMA_TOP_P=0.8
+OLLAMA_TOP_K=20
+OLLAMA_REPEAT_PENALTY=1.05
+OLLAMA_SEED=42
 
 PRCLOSURE_PROMPT_FILE=
 ```
@@ -273,9 +280,16 @@ PRCLOSURE_PROMPT_FILE=
 | `JIRA_API_TOKEN` | Yes | Jira API token |
 | `JIRA_API_VERSION` | No | Jira API version, defaults to `3` |
 | `JIRA_ACCEPTANCE_CRITERIA_FIELD` | No | Optional custom Jira field for acceptance criteria |
-| `OPENWEBUI_URL` | Yes | OpenWebUI API URL |
-| `OPENWEBUI_API_KEY` | Yes | OpenWebUI API key |
-| `OPENWEBUI_MODEL` | Yes | Model name to use through OpenWebUI |
+| `OLLAMA_URL` | No | Ollama API URL, defaults to `http://127.0.0.1:11434` |
+| `OLLAMA_MODEL` | No | Ollama model name, defaults to `prclosure-review` |
+| `OLLAMA_TIMEOUT_SECONDS` | No | LLM request timeout in seconds |
+| `OLLAMA_NUM_CTX` | No | Model context window setting |
+| `OLLAMA_NUM_PREDICT` | No | Maximum generated token count |
+| `OLLAMA_TEMPERATURE` | No | Sampling temperature |
+| `OLLAMA_TOP_P` | No | Top-p sampling value |
+| `OLLAMA_TOP_K` | No | Top-k sampling value |
+| `OLLAMA_REPEAT_PENALTY` | No | Repeat penalty setting |
+| `OLLAMA_SEED` | No | Deterministic seed value where supported |
 | `PRCLOSURE_PROMPT_FILE` | No | Optional override path for the system prompt |
 
 If `JIRA_ACCEPTANCE_CRITERIA_FIELD` is empty or returns no value, PRClosure instructs the LLM to extract acceptance criteria from the Jira ticket description.
@@ -305,11 +319,11 @@ Required behaviour:
 - Valid PR events receive `202 Accepted`
 - Processing continues in the background
 
-## OpenWebUI setup
+## LLM setup
 
-OpenWebUI must be reachable from PRClosure through `OPENWEBUI_URL`.
+PRClosure currently sends review context to the configured LLM service.
 
-PRClosure expects the model to:
+The configured model is expected to:
 
 - follow the system prompt
 - return JSON only
@@ -336,7 +350,7 @@ GitHub PR Event
   -> Fetch Jira ticket context
   -> Fetch PR diff from GitHub
   -> Build deterministic context payload
-  -> Send context to OpenWebUI
+  -> Send context to configured LLM service
   -> Receive structured JSON output
   -> Validate strict output contract
   -> Block write-back if output is invalid
@@ -532,7 +546,7 @@ The test suite covers:
 - webhook route behaviour
 - GitHub signature validation
 - ticket key parsing
-- OpenWebUI client behaviour
+- LLM client behaviour
 - output contract validation
 - background processing
 - fetch and write-back contracts
@@ -609,7 +623,7 @@ Reference implementation for bounded AI-assisted engineering governance across G
 Suggested topics:
 
 ```text
-ai-governance ai-assisted-development llm-orchestration github jira fastapi openwebui qa-automation pull-request-review engineering-leadership
+ai-governance ai-assisted-development llm-orchestration github jira fastapi local-llm ollama qa-automation pull-request-review engineering-leadership
 ```
 
 ## Status
